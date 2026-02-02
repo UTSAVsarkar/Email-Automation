@@ -5,32 +5,25 @@ model_name = "google/flan-t5-small"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-def generate_reply(text: str) -> bool:
+def generate_reply(text: str) -> str:
     prompt = f"""
-Classify the email as CUSTOMER_INQUIRY or OTHER.
+You are a customer support assistant.
 
-Examples:
-Email: Where is my order?
-Label: CUSTOMER_INQUIRY
+Write a polite and helpful reply to the following customer email.
 
-Email: I want a refund for my purchase
-Label: CUSTOMER_INQUIRY
+Customer email:
+{text}
 
-Email: Thanks for your support
-Label: OTHER
-
-Email: {text}
-Label:
+Reply:
 """.strip()
 
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True)
 
     outputs = model.generate(
         **inputs,
-        max_new_tokens=5,
+        max_new_tokens=120,
         do_sample=False
     )
 
-    prediction = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-    return prediction.strip().upper().startswith("CUSTOMER_INQUIRY")
+    reply = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return reply.strip()
