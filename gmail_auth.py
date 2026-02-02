@@ -9,10 +9,14 @@ TOKEN_FILE = 'token.json'
 
 
 def authenticate_gmail():
+    # 🚫 Block Gmail OAuth in GitHub Actions
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        raise RuntimeError("Gmail authentication is disabled in CI")
+
     creds = None
 
     # Load existing token if present
-    if os.path.exists(TOKEN_FILE):
+    if os.path.exists(TOKEN_FILE) and os.path.getsize(TOKEN_FILE) > 0:
         creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
 
     # If no valid credentials, authenticate once
@@ -20,8 +24,13 @@ def authenticate_gmail():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
+            if not os.path.exists(CREDENTIAL_FILE):
+                raise FileNotFoundError(
+                    "credential.json not found. Run OAuth locally first."
+                )
+
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credential.json', SCOPES
+                CREDENTIAL_FILE, SCOPES
             )
             creds = flow.run_local_server(port=0)
 

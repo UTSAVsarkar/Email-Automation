@@ -1,3 +1,4 @@
+import os
 from text_cleaner import clean_email_text
 from intent_classifier import is_customer_inquiry
 from gmail_auth import authenticate_gmail
@@ -7,6 +8,11 @@ from gmail_sender import send_reply, mark_as_read
 
 
 def main():
+    # 🚫 Skip Gmail logic in GitHub Actions
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        print("Running in CI — skipping Gmail automation.")
+        return
+
     service = authenticate_gmail()
     email = fetch_unread_email(service)
 
@@ -39,7 +45,6 @@ def main():
     print(reply)
     print("=" * 60)
 
-    # AUTO-SEND (no permission)
     send_reply(service, email['sender'], email['subject'], reply)
     mark_as_read(service, email['id'])
 
