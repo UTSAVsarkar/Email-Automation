@@ -1,29 +1,38 @@
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 
 model_name = "google/flan-t5-small"
+
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-generator = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-def generate_reply(email_text):
+generator = pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer
+)
+
+def generate_reply(text: str) -> bool:
     prompt = f"""
-You are a professional customer support assistant.
+Classify the email as CUSTOMER_INQUIRY or OTHER.
 
-Rules:
-- Ignore marketing content.
-- Focus only on user intent.
-- Keep response concise and professional.
+Examples:
+Email: Where is my order?
+Label: CUSTOMER_INQUIRY
 
-Example 1:
-Customer: Where is my order?
-Response: Your order is currently being processed and will be shipped soon.
+Email: I want a refund for my purchase
+Label: CUSTOMER_INQUIRY
 
-Example 2:
-Customer: I want a refund.
-Response: Sure, please share your order ID to help us proceed.
+Email: Thanks for your support
+Label: OTHER
 
-Customer message:
-{email_text}
+Email: {text}
+Label:
 """
 
-    response = generator(prompt, max_length=150)
-    return response[0]['generated_text']
+    output = generator(
+        prompt,
+        max_new_tokens=5,
+        do_sample=False
+    )[0]["generated_text"]
+
+    return "CUSTOMER_INQUIRY" in output
