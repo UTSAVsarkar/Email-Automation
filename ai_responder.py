@@ -1,9 +1,7 @@
 from transformers import pipeline
 
-generator = pipeline(
-    "text2text-generation",
-    model="google/flan-t5-base"
-)
+generator = pipeline("text2text-generation", model="google/flan-t5-small")
+
 
 def generate_reply(email_text):
     prompt = f"""
