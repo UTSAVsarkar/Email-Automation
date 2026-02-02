@@ -1,15 +1,9 @@
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 model_name = "google/flan-t5-small"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-
-classifier = pipeline(
-    "text-generation",
-    model=model,
-    tokenizer=tokenizer
-)
 
 def is_customer_inquiry(email_text: str) -> bool:
     prompt = f"""
@@ -35,14 +29,14 @@ Email: {email_text}
 Label:
 """.strip()
 
-    output = classifier(
-        prompt,
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True)
+
+    outputs = model.generate(
+        **inputs,
         max_new_tokens=8,
-        do_sample=False,
-        truncation=True
-    )[0]["generated_text"]
+        do_sample=False
+    )
 
-    # Extract only the generated label (after "Label:")
-    predicted_label = output.split("Label:")[-1].strip().lower()
+    prediction = tokenizer.decode(outputs[0], skip_special_tokens=True).lower()
 
-    return predicted_label.startswith("customer")
+    return prediction.startswith("customer")
